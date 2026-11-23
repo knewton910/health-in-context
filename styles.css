@@ -1,0 +1,966 @@
+/* ==================================================
+   HEALTH IN CONTEXT
+   Global Design System
+   ================================================== */
+
+/* Import typography */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+
+/* Website color palette and typography */
+
+:root {
+  --evergreen: #29443D;
+  --sage: #A9BDB0;
+  --eucalyptus: #E7EEE9;
+  --ivory: #FAF8F4;
+  --sand: #E7DED0;
+  --charcoal: #282E2C;
+  --marigold: #E8B44F;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-data: 'Space Grotesk', sans-serif;
+}
+
+
+/* ==================================================
+   GLOBAL STYLING
+   ================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--ivory);
+  color: var(--charcoal);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+a {
+  color: inherit;
+}
+
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 3px solid var(--marigold);
+  outline-offset: 5px;
+}
+
+
+/* ==================================================
+   LANDING PAGE — DESKTOP
+   ================================================== */
+
+/* Remove default Quarto layout restrictions */
+
+body:has(.landing-page) #quarto-content,
+body:has(.landing-page) #quarto-document-content {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  display: block;
+}
+
+.landing-page {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  min-height: 100svh;
+  background: var(--evergreen);
+  color: var(--ivory);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  padding: 7vh 10vw 80px;
+}
+
+.landing-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1200px;
+  margin: auto;
+}
+
+/* Editorial label */
+
+.eyebrow {
+  font-family: var(--font-data);
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--sage);
+  margin-bottom: 30px;
+}
+
+/* Expressive title */
+
+.landing-title {
+  font-family: var(--font-display);
+  font-size: clamp(5rem, 11vw, 11rem);
+  font-weight: 400;
+  letter-spacing: -0.065em;
+  line-height: 0.9;
+  margin: 0 0 36px;
+}
+
+.landing-title span {
+  display: block;
+  color: var(--marigold);
+  font-style: italic;
+}
+
+/* Subtitle */
+
+.landing-subtitle {
+  max-width: 620px;
+  font-size: clamp(1.1rem, 1.8vw, 1.5rem);
+  line-height: 1.5;
+  color: var(--ivory);
+  margin-bottom: 45px;
+}
+
+/* Artistic star */
+
+.decorative-star {
+  position: absolute;
+  right: 7%;
+  top: 5%;
+  font-size: clamp(4rem, 10vw, 9rem);
+  line-height: 1;
+  color: var(--marigold);
+  transform: rotate(-15deg);
+  font-weight: 400;
+}
+
+/* Geographic-inspired abstract artwork */
+
+.geographic-art {
+  position: absolute;
+  width: 760px;
+  height: 850px;
+  right: -240px;
+  bottom: -290px;
+  z-index: -1;
+  opacity: 0.27;
+  pointer-events: none;
+  transform: rotate(-28deg);
+  border-radius: 46% 54% 65% 35%;
+  background: repeating-radial-gradient(
+    ellipse at 42% 45%,
+    transparent 0px,
+    transparent 21px,
+    var(--sage) 22px,
+    transparent 23px,
+    transparent 43px
+  );
+}
+
+/* Entrance and QR layout */
+
+.landing-actions {
+  display: flex;
+  align-items: center;
+  gap: 55px;
+}
+
+.explore-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--marigold);
+  color: var(--charcoal);
+  font-family: var(--font-data);
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 16px 30px;
+  border-radius: 3px;
+  text-decoration: none;
+  transition: transform 0.25s ease,
+              background 0.25s ease;
+}
+
+.explore-button:hover {
+  background: var(--ivory);
+  color: var(--evergreen);
+  transform: translateY(-4px);
+}
+
+.landing-description {
+  font-family: var(--font-data);
+  color: var(--sage);
+  font-size: 0.8rem;
+  margin-top: 12px;
+}
+
+/* QR code area */
+
+.qr-container {
+  text-align: center;
+}
+
+.qr-placeholder {
+  width: 100px;
+  height: 100px;
+  margin: auto;
+  background: var(--ivory);
+  color: var(--evergreen);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-data);
+  font-size: 1.5rem;
+  border-radius: 3px;
+}
+
+.qr-container img {
+  width: 100px;
+  height: auto;
+  display: block;
+  margin: auto;
+}
+
+.qr-container p {
+  font-size: 0.75rem;
+  color: var(--sage);
+  margin-top: 8px;
+}
+
+/* Landing page footer */
+
+.landing-footer {
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  border-top: 1px solid rgba(169, 189, 176, 0.35);
+  padding: 18px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--sage);
+}
+
+
+/* ==================================================
+   = = — PAGE FOUNDATION
+   ================================================== */
+
+html:has(.story-header) {
+  font-size: 15px;
+}
+
+body:has(.story-header) {
+  font-size: 15px;
+}
+
+.story-page {
+  width: 100%;
+  background: var(--ivory);
+}
+
+/* Editorial header */
+
+.story-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 28px 0;
+  background: transparent;
+  color: var(--evergreen);
+  border-bottom: 1px solid var(--sage);
+}
+
+.story-brand {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 400;
+  letter-spacing: -0.05em;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.story-brand em {
+  color: var(--evergreen);
+}
+
+.story-header-label {
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--evergreen);
+}
+
+/* Researcher message hidden on desktop */
+
+.mobile-researcher-message {
+  display: none;
+}
+
+
+/* ==================================================
+   QUARTO SIDEBAR NAVIGATION
+   ================================================== */
+
+#TOC {
+  padding-top: 40px;
+}
+
+/* Navigation title */
+
+#TOC #toc-title {
+  font-family: var(--font-data);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--evergreen);
+}
+
+/* Ensure navigation links are visible */
+
+#TOC > ul.collapse {
+  display: block !important;
+}
+
+/* Navigation links */
+
+#quarto-margin-sidebar #TOC a {
+  display: block;
+  font-family: var(--font-data);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--evergreen);
+  padding: 9px 12px;
+  border-left: 3px solid transparent;
+  text-decoration: none;
+  transition: background-color 0.2s ease,
+              border-color 0.2s ease;
+}
+
+#TOC a em {
+  font-style: normal;
+}
+
+/* Hover and keyboard focus */
+
+#quarto-margin-sidebar #TOC a:hover,
+#quarto-margin-sidebar #TOC a:focus {
+  color: var(--evergreen) !important;
+  background-color: var(--eucalyptus) !important;
+  border-left-color: var(--sage) !important;
+}
+
+/* Active and selected section */
+
+#quarto-margin-sidebar #TOC a.active,
+#quarto-margin-sidebar #TOC a:active {
+  color: var(--evergreen) !important;
+  background-color: var(--eucalyptus) !important;
+  border-left-color: var(--marigold) !important;
+  font-weight: 600;
+}
+
+
+/* ==================================================
+   SHARED EDITORIAL SECTION STYLING
+   ================================================== */
+
+section.story-section,
+section.concern-section,
+section.context-section,
+section.georgia-section {
+  padding: 40px 0;
+  scroll-margin-top: 25px;
+  border-bottom: 1px solid var(--sage);
+}
+
+/* Section headings */
+
+section.story-section > h2,
+section.concern-section > h2,
+section.context-section > h2,
+section.georgia-section > h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 2.5vw, 2.5rem);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  line-height: 1.12;
+  color: var(--evergreen);
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+section.story-section > h2 {
+  margin-bottom: 24px;
+}
+
+.story-section h3 {
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 2.2vw, 1.8rem);
+  letter-spacing: -0.025em;
+  color: var(--evergreen);
+}
+
+.story-section img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Editorial labels */
+
+section.concern-section > h2::before,
+section.context-section > h2::before,
+section.georgia-section > h2::before,
+section.analysis-section > h2::before,
+section.findings-section > h2::before,
+section.implications-section > h2::before {
+  display: block;
+  font-family: var(--font-data);
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-style: normal;
+  letter-spacing: 0.1em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  color: var(--evergreen);
+  margin-bottom: 16px;
+}
+
+/* Narrative typography */
+
+.editorial-narrative p,
+.georgia-introduction p {
+  font-size: 1rem;
+  line-height: 1.65;
+  margin-bottom: 16px;
+}
+
+/* Supporting citations */
+
+.source-note {
+  display: block;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: #65736B;
+  margin-top: 20px;
+}
+
+.source-note a:hover {
+  color: var(--evergreen);
+}
+
+
+/* ==================================================
+   SECTION 01 — PUBLIC HEALTH CONCERN
+   ================================================== */
+
+section.concern-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  grid-template-areas:
+    "heading statistic"
+    "narrative statistic";
+  column-gap: clamp(35px, 5vw, 75px);
+  row-gap: 24px;
+  align-items: start;
+}
+
+section.concern-section > h2 {
+  grid-area: heading;
+}
+
+section.concern-section > .editorial-narrative {
+  grid-area: narrative;
+}
+
+section.concern-section > .editorial-statistic {
+  grid-area: statistic;
+  align-self: center;
+}
+
+/* Featured hypertension statistic */
+
+.editorial-statistic {
+  padding: 20px 0;
+  color: var(--evergreen);
+}
+
+.statistic-number {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 6vw, 6rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.07em;
+  margin-bottom: 20px;
+}
+
+.statistic-description {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.5;
+  max-width: 340px;
+}
+
+.statistic-accent {
+  display: block;
+  width: 75%;
+  max-width: 280px;
+  height: 4px;
+  background: var(--marigold);
+  margin: 24px 0;
+}
+
+
+/* ==================================================
+   SECTION 02 — SOCIOECONOMIC CONTEXT
+   ================================================== */
+
+section.context-section {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr);
+  grid-template-areas:
+    "artwork heading"
+    "artwork narrative";
+  column-gap: clamp(35px, 5vw, 75px);
+  row-gap: 24px;
+  align-items: start;
+}
+
+section.context-section > h2 {
+  grid-area: heading;
+}
+
+section.context-section > .context-artwork {
+  grid-area: artwork;
+  align-self: center;
+}
+
+section.context-section > .editorial-narrative {
+  grid-area: narrative;
+}
+
+/* Editorial artwork */
+
+.context-artwork {
+  position: relative;
+  isolation: isolate;
+  min-height: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.context-contours {
+  position: absolute;
+  width: 85%;
+  height: 100%;
+  z-index: -1;
+  opacity: 0.65;
+  pointer-events: none;
+  border-radius: 45% 55% 60% 40%;
+  transform: rotate(-25deg);
+  background: repeating-radial-gradient(
+    ellipse at center,
+    transparent 0px,
+    transparent 17px,
+    var(--sage) 18px,
+    transparent 19px,
+    transparent 34px
+  );
+}
+
+.context-star {
+  position: absolute;
+  top: 5%;
+  left: 8%;
+  font-size: 4rem;
+  line-height: 1;
+  color: var(--marigold);
+}
+
+.editorial-statement {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 2.8vw, 2.8rem);
+  line-height: 1.15;
+  letter-spacing: -0.045em;
+  color: var(--evergreen);
+  margin: 0;
+}
+
+
+/* ==================================================
+   SECTION 03 — GEORGIA COMMUNITY PROFILE
+   ================================================== */
+
+.georgia-introduction {
+  max-width: 850px;
+  margin-top: 28px;
+  margin-bottom: 35px;
+}
+
+/* Statewide health indicators */
+
+.georgia-indicators {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  background: var(--eucalyptus);
+  padding: 25px 30px;
+  gap: 35px;
+}
+
+.profile-indicator {
+  padding: 10px 0;
+}
+
+.profile-indicator + .profile-indicator {
+  border-left: 1px solid var(--sage);
+  padding-left: 40px;
+}
+
+.indicator-label {
+  display: block;
+  font-family: var(--font-data);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--evergreen);
+  margin-bottom: 15px;
+}
+
+.indicator-value {
+  display: block;
+  font-family: var(--font-data);
+  font-size: clamp(2.5rem, 4vw, 4rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.06em;
+  color: var(--evergreen);
+  margin-bottom: 12px;
+}
+
+.indicator-description {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--evergreen);
+}
+
+/* Transition into geographic analysis */
+
+.georgia-transition {
+  max-width: 850px;
+  margin-top: 30px;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--evergreen);
+  line-height: 1.5;
+}
+
+
+/* ==================================================
+   DATA STORY — EDITORIAL FOOTER
+   ================================================== */
+
+.story-footer {
+  background: var(--evergreen);
+  color: var(--ivory);
+  padding: 40px 5%;
+  margin-top: 35px;
+}
+
+/* Footer supporting text */
+
+.story-footer p,
+.story-footer a {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--sage);
+  line-height: 1.6;
+  letter-spacing: normal;
+}
+
+/* Footer brand typography */
+
+.story-footer .footer-brand,
+.story-footer .footer-brand p {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+  color: var(--ivory);
+  margin: 0 0 15px;
+}
+
+.story-footer .footer-brand em {
+  color: var(--marigold);
+}
+
+.footer-information {
+  margin: 25px 0;
+}
+
+.story-footer a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.story-footer a:hover {
+  color: var(--marigold);
+}
+
+
+/* ==================================================
+   MOBILE EXPERIENCE
+   ================================================== */
+
+@media (max-width: 767px) {
+
+  /* Global mobile typography */
+
+  body {
+    font-size: 16px;
+  }
+
+  /* Landing page */
+
+  .landing-page {
+    min-height: 100svh;
+    padding: 45px 7vw 100px;
+  }
+
+  .landing-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .eyebrow {
+    max-width: 240px;
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    margin-bottom: 75px;
+  }
+
+  .landing-title {
+    font-size: clamp(3.8rem, 15vw, 7rem);
+    letter-spacing: -0.06em;
+    line-height: 0.95;
+    margin-bottom: 28px;
+  }
+
+  .decorative-star {
+    top: 35px;
+    right: 0;
+    font-size: 3.8rem;
+  }
+
+  .landing-subtitle {
+    font-size: 1.15rem;
+    max-width: 340px;
+    margin-bottom: 35px;
+  }
+
+  .landing-actions {
+    display: block;
+    width: 100%;
+  }
+
+  .explore-button {
+    width: 100%;
+    max-width: 420px;
+    min-height: 54px;
+    padding: 18px 24px;
+  }
+
+  .landing-description {
+    font-size: 0.75rem;
+    text-align: left;
+  }
+
+  .qr-container {
+    display: none;
+  }
+
+  .geographic-art {
+    width: 490px;
+    height: 550px;
+    right: -220px;
+    bottom: -190px;
+    opacity: 0.22;
+  }
+
+  .landing-footer {
+    left: 7%;
+    right: 7%;
+    font-size: 0.6rem;
+    letter-spacing: 0.02em;
+  }
+
+  /* Data story header */
+
+  .story-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 25px 0;
+  }
+
+  .story-brand {
+    font-size: 2rem;
+  }
+
+  .story-header-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+  }
+
+  /* Mobile-exclusive researcher message */
+
+  .mobile-researcher-message:not(:empty) {
+    display: block;
+    background: var(--eucalyptus);
+    padding: 30px 6vw;
+  }
+
+  /* Shared editorial styling */
+
+  section.story-section,
+  section.concern-section,
+  section.context-section,
+  section.georgia-section {
+    padding: 40px 0;
+    scroll-margin-top: 25px;
+  }
+
+  section.story-section > h2,
+  section.concern-section > h2,
+  section.context-section > h2,
+  section.georgia-section > h2 {
+    font-size: clamp(1.8rem, 7vw, 2.4rem);
+  }
+
+  /* Section 01 */
+
+  section.concern-section {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "heading"
+      "narrative"
+      "statistic";
+    gap: 20px;
+  }
+
+  .editorial-statistic {
+    padding: 10px 0;
+  }
+
+  .statistic-number {
+    font-size: clamp(4rem, 17vw, 6rem);
+  }
+
+  .statistic-description {
+    font-size: 1.1rem;
+  }
+
+  /* Section 02 */
+
+  section.context-section {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "heading"
+      "artwork"
+      "narrative";
+    gap: 20px;
+  }
+
+  .context-artwork {
+    min-height: 240px;
+  }
+
+  .context-star {
+    font-size: 3rem;
+  }
+
+  .editorial-statement {
+    font-size: 2.4rem;
+  }
+
+  /* Section 03 */
+
+  .georgia-indicators {
+    grid-template-columns: 1fr;
+    padding: 25px;
+    gap: 20px;
+  }
+
+  .profile-indicator + .profile-indicator {
+    border-left: none;
+    border-top: 1px solid var(--sage);
+    padding-left: 0;
+    padding-top: 25px;
+  }
+
+  /* Data story footer */
+
+  .story-footer {
+    padding: 35px 6vw;
+  }
+
+}
+
+
+/* ==================================================
+   ACCESSIBILITY — REDUCED MOTION
+   ================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+}

@@ -1,0 +1,55 @@
+---
+pagetitle: "Health in Context"
+title-block: false
+---
+
+```{=html}
+<main class="landing-page">
+
+  <div class="geographic-art" aria-hidden="true"></div>
+
+  <div class="landing-content">
+
+    <p class="eyebrow">A Georgia Community Health Profile</p>
+
+    <div class="decorative-star" aria-hidden="true">✳</div>
+
+    <h1 class="landing-title">
+      Health in
+      <span>Context.</span>
+    </h1>
+
+    <p class="landing-subtitle">
+      Exploring the socioeconomic landscape of hypertension
+      across Georgia.
+    </p>
+
+    <div class="landing-actions">
+
+      <div class="landing-enter">
+        <a href="data-story.html" class="explore-button">
+          Explore the Story ↗
+        </a>
+
+        <p class="landing-description">
+          An interactive public health data story
+        </p>
+      </div>
+
+      <div class="qr-container">
+        <!-- QR code will be added after publishing -->
+        <div class="qr-placeholder">QR</div>
+        <p>Scan to explore on mobile</p>
+      </div>
+
+    </div>
+
+  </div>
+
+  <footer class="landing-footer">
+    <span>Research · Epidemiology · Data Storytelling</span>
+    <span>2026</span>
+  </footer>
+
+</main>
+```

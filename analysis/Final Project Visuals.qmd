@@ -1,0 +1,797 @@
+---
+title: "Public Health GIS Mapping for Final Project"
+author: "Kalyn Newton"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-copy: true
+    code-tools: true
+execute:
+  eval: true
+  warning: false
+  message: false
+---
+
+# Part 0: Setup
+
+```{r}
+#|label: load-packages
+
+library(tidyverse)
+library(sf)
+library(maps)
+library(leaflet)
+library(htmltools)
+library(tigris)
+library(colorspace)
+library(patchwork)
+
+options(tigris_use_cache = TRUE)
+```
+
+# Part 1: Import datasets
+
+```{r}
+#|label: upload-data
+
+georgia_svi <- read.csv("../data/2022_GEORGIA_SVI.csv",
+                        colClasses = c(FIPS = "character"))
+
+cdc_places <- read.csv("../data/PLACES_GA_Census_Tract_Data_2025.csv",
+                       colClasses = c(
+                         TractFIPS = "character",
+                         CountyFIPS = "character"
+                       ))
+```
+
+# Part 2: Explore data
+
+```{r}
+#|label: explore-data
+
+names(georgia_svi)
+names(cdc_places)
+dim(georgia_svi)
+dim(cdc_places)
+```
+
+# Part 3: Clean Data
+
+```{r}
+#|label: clean-data
+
+#Clean SVI data
+svi_clean <- georgia_svi %>%
+  transmute(
+    tract_fips = FIPS,
+    county_name = COUNTY,
+    svi_theme1 = na_if(RPL_THEME1, -999)
+  )
+
+#Clean PLACES data
+places_clean <- cdc_places %>%
+  transmute(
+    tract_fips = TractFIPS,
+    county_fips = CountyFIPS,
+    county_name = CountyName,
+    total_population = TotalPopulation,
+    adult_population = TotalPop18plus,
+    hypertension_prev = BPHIGH_CrudePrev,
+    bp_medication_prev = BPMED_CrudePrev
+  )
+
+# `transmute()` selects, renames, and transforms variables while retaining only the specific columns.
+```
+
+# Part 4: Validate Datasets
+
+```{r}
+#|label: validate-data
+
+#Check for missing value
+colSums(is.na(svi_clean))
+colSums(is.na(places_clean))
+
+#Check for duplicate census tract identifiers
+sum(duplicated(svi_clean$tract_fips))
+sum(duplicated(places_clean$tract_fips))
+
+#Check number of unique counties
+n_distinct(svi_clean$county_name)
+n_distinct(places_clean$county_name)
+```
+
+## Check for census tract inconsistencies
+
+```{r}
+#|label: check-unmatched-tracts
+
+#Identify SVI tracts not represented in PLACES
+anti_join(svi_clean, places_clean, by = "tract_fips")
+
+#Identify PLACES tracts not represented in SVI
+anti_join(places_clean, svi_clean, by = "tract_fips")
+
+# `anti_join()` returns rows from the first dataset that do not have matching identifiers in the second dataset.
+```
+
+# Part 5: Combine dataset using `left_join()`
+
+```{r}
+#|label: join-data
+
+combined_health <- svi_clean %>%
+  left_join(
+    places_clean %>% select(-county_name),
+    by = "tract_fips"
+  )
+```
+
+## Verify data join
+
+```{r}
+#|label: verify-data-join
+
+dim(combined_health)
+colSums(is.na(combined_health))
+```
+
+# Part 6: Spatial Data Preparation
+
+```{r}
+#|label: tract-boundaries
+
+georgia_tracts <- tigris::tracts(
+  state = "GA",
+  year = 2022,
+  cb = TRUE
+) %>%
+  rename(
+    tract_fips = GEOID 
+  )
+
+georgia_tracts <- st_make_valid(georgia_tracts)
+```
+
+## Obtain Georgia County Boundaries
+
+```{r}
+#|label: county-boundaries
+
+georgia_counties <- tigris::counties(
+  state = "GA",
+  year = 2022,
+  cb = TRUE
+) %>%
+  rename(
+    county_fips = GEOID,
+    county_name = NAMELSAD
+  )
+
+georgia_counties <- st_make_valid(georgia_counties)
+```
+
+# Step 7: Spatial join using `left_join`
+
+```{r}
+#|label: spatial-join
+
+tract_map_data <- georgia_tracts %>%
+  left_join(
+    combined_health,
+    by = "tract_fips"
+  )
+```
+
+## Verify spatial join
+
+```{r}
+#|label: verify-spatial-join
+
+tract_map_data %>%
+  st_drop_geometry() %>%
+  summarize(
+    tract_count = n(),
+    missing_svi = sum(is.na(svi_theme1)),
+    missing_hypertension = sum(is.na(hypertension_prev))
+  )
+
+anti_join(
+  combined_health,
+  st_drop_geometry(georgia_tracts),
+  by = "tract_fips"
+)
+```
+
+# Part 8: Bivariate Classification
+
+```{r}
+#|label: classification-thresholds
+
+htn_thresholds <- quantile(
+  tract_map_data$hypertension_prev,
+  probs = c(0, 1/3, 2/3, 1),
+  na.rm = TRUE
+)
+
+htn_thresholds
+
+# htn_thresholds () stands for hypertension prevalence thresholds
+# quantile() calculates distribution-based cut points.
+# na.rm = TRUE excludes missing values from the calculation. 
+```
+
+## Classify socioeconomic vulnerabilit and hypertension prevalence
+
+```{r}
+#|label: classify-indicators
+
+tract_map_data <- tract_map_data %>%
+  mutate(
+    svi_class = case_when(
+      is.na(svi_theme1) ~ NA_character_,
+      svi_theme1 <= 1/3 ~ "Low",
+      svi_theme1 <= 2/3 ~ "Moderate",
+      TRUE ~ "High"
+    ),
+    hypertension_class = case_when(
+      is.na(hypertension_prev) ~ NA_character_,
+      hypertension_prev <= htn_thresholds[2] ~ "Low",
+      hypertension_prev <= htn_thresholds[3] ~ "Moderate",
+      TRUE ~ "High"
+    )
+  )
+
+# case_when() assigns classifications based on specified conditions.
+# NA_character_ preserves missing values as character-type NA.
+# htn_threshold[2] references the first tertile threshold.
+# htn_thresholds[3] references the second tertile threshold.
+```
+
+## Verify classifications
+
+```{r}
+#|label: verify-classifications
+
+tract_map_data %>%
+  st_drop_geometry() %>%
+  count(svi_class)
+
+tract_map_data %>%
+  st_drop_geometry() %>%
+  count(hypertension_class)
+```
+
+## Combine classifications
+
+```{r}
+#|label: bivariate-classification
+
+tract_map_data <- tract_map_data %>%
+  mutate(
+    bivariate_class = case_when(
+      is.na(svi_class) | is.na(hypertension_class) ~ "Missing",
+      TRUE ~ paste(svi_class, hypertension_class, sep = "-")
+    )
+  )
+
+# paste() combines the two classifications into a single value.
+# sep = "-" separates the classifications with a hyphen.
+# | represents the operator.
+```
+
+## Verify bivariate classification
+
+```{r}
+#|label: verify-bivariate-classification
+
+tract_map_data %>%
+  st_drop_geometry() %>%
+  count(bivariate_class)
+```
+
+## Bivariate color palette and accessibility assessment
+
+```{r}
+#|label: bivariate-color-palette
+
+# Define bivariate color palette
+bivariate_colors <- c(
+  "Low-Low" = "#F1F1F1",
+  "Moderate-Low" = "#BEDCF0",
+  "High-Low" = "#458BC2",
+  "Low-Moderate" = "#F3C6CF",
+  "Moderate-Moderate" = "#B8A9CF",
+  "High-Moderate" = "#6288BA",
+  "Low-High" = "#DC7890",
+  "Moderate-High" = "#A35B87",
+  "High-High" = "#54346D",
+  "Missing" = "#737373"
+)
+
+# Assess color vision deficiency
+swatchplot(
+  list(
+    "Original" = bivariate_colors,
+    "Deutan" = deutan(bivariate_colors),
+    "Protan" = protan(bivariate_colors),
+    "Tritan" = tritan(bivariate_colors)
+  )
+)
+
+# Prepare color palette for interactive visualization
+bivariate_pal <- colorFactor(
+  palette = unname(bivariate_colors),
+  domain = names(bivariate_colors),
+  levels = names(bivariate_colors)
+)
+
+# swatchplot() displays palettes for visual comparison.
+# deutan(), protan(), and tritan() simulate forms of color vision deficiency.
+# colorFactor() assigns colors to categorical values.
+# unname() removes names from the color vector.
+# levels establishes the order of the classifications.
+```
+
+# Part 9: Bivariate Choropleth
+
+## Create bivariate legend
+
+```{r}
+#|label: bivariate-legend-data
+
+legend_data <- expand_grid(
+  svi_class = c("Low", "Moderate", "High"),
+  hypertension_class = c("Low", "Moderate", "High")
+) %>%
+  mutate(
+    bivariate_class = paste(
+      svi_class, hypertension_class, sep = "-"
+    ),
+    svi_class = factor(
+      svi_class,
+      levels = c("Low", "Moderate", "High")
+    ),
+    hypertension_class = factor(
+      hypertension_class,
+      levels = c("Low", "Moderate", "High")
+    )
+  )
+
+legend_data
+
+# expand_grid() creates all possible combinations of classifications.
+# factor() establishes the order of classifications along each axis.
+```
+
+## Create the legend visualization
+
+```{r}
+#|label: static-bivariate-legend
+
+bivariate_legend <- ggplot(
+  legend_data,
+  aes(
+    x = svi_class,
+    y = hypertension_class,
+    fill = bivariate_class
+  )
+) +
+  geom_tile(
+    color = "white",
+    linewidth = 0.5
+  ) +
+  scale_fill_manual(
+    values = bivariate_colors
+  ) +
+  coord_fixed() +
+ labs(
+  x = "Socioeconomic Vulnerability",
+  y = "Hypertension Prevalence",
+  caption = "■ Missing data"
+) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    panel.grid = element_blank(),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 9),
+    plot.caption = element_text(
+  color = bivariate_colors[["Missing"]],
+  size = 9,
+  hjust = 0.5
+)
+  )
+
+bivariate_legend
+
+# geom_tile() creates the colored cells of the legend.
+# coord_fixed() maintains square proportions for each cell.
+```
+
+## Static Bivariate Map
+
+```{r}
+#|label: static-bivariate-map
+#|fig-width: 9
+#|fig-height: 8
+#|fig-alt: "Map of Georgia comparing socioeconomic vulnerability and estimated hypertension prevalence among adults by census tract. Dark purple indicates areas with high levels of both indicators, particularly in central and southern Georgia. Lighter colors are more common throughout metropolitan Atlanta. Pink and blue shades represent different combinations of socioeconomic vulnerability and hypertension prevalence. Dark gray represents areas with missing data."
+
+static_map <- ggplot() +
+  geom_sf(
+    data = tract_map_data,
+    aes(
+      fill = bivariate_class
+    ),
+    color = NA
+  ) +
+  geom_sf(
+    data = georgia_counties,
+    fill = NA,
+    color = "white",
+    linewidth = 0.2
+  ) +
+  scale_fill_manual(
+    values = bivariate_colors,
+    name = "SVI-Hypertension"
+  ) +
+  labs(
+    title = "Socioeconomic Vulnerability and Hypertension in Georgia",
+    subtitle = str_wrap("Relative socioeconomic vulnerability and adult diagnosed hypertension prevalence by census tract",
+                        width = 75
+    ),
+    caption = "Source: CDC/ATSDR SVI (2022); CDC PLACES (2025 release). \nClassifications represent relative vulnerability and disease burden."
+  ) +
+  theme_void() +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 10),
+    plot.caption = element_text(size = 8, hjust = 0 )
+  )
+
+static_map + bivariate_legend +
+  plot_layout(widths = c(2.5, 1))
+
+# plot_layout() controls the relative widths of combined plots.
+```
+
+## Save the static bivariate map
+
+```{r}
+#|label: save-static-map
+
+ggsave(
+  filename = "../assets/georgia-bivariate-static.png",
+  plot = static_map + bivariate_legend + plot_layout(widths = c(2.5, 1)),
+  width = 12,
+  height = 8,
+  dpi = 300,
+  bg = "white"
+)
+```
+
+# Part 10: Interactive bivariate choropleth
+
+```{r}
+#|label: prepare-interactive-map
+
+tract_leaflet <- tract_map_data %>%
+  st_transform(crs = 4326)
+
+county_leaflet <- georgia_counties %>%
+  st_transform(crs = 4326)
+
+# st_transform() converts spatial data to the specified coordinate reference systems.
+# EPSG: uses WGS 84 latitude and longitude coordinates. 
+```
+
+## Create interactive bivariate legend
+
+```{r}
+#|label: interactive-bivariate-legend
+
+interactive_legend <- tags$div(
+  style = paste(
+    "background: white;",
+    "padding: 12px;",
+    "border-radius: 6px;",
+    "box-shadow: 0 1px 5px rgba(0,0,0,0.3);",
+    "font-size: 11px;",
+    "color: #333333;"
+  ),
+
+  tags$div(
+    style = "font-weight: bold; text-align: center;",
+    "Hypertension Prevalence"
+  ),
+
+  tags$table(
+    style = "border-spacing: 3px;",
+
+    lapply(c("High", "Moderate", "Low"), function(htn) {
+      tags$tr(
+        tags$td(
+          style = "padding-right: 6px; text-align: right;",
+          htn
+        ),
+
+        lapply(c("Low", "Moderate", "High"), function(svi) {
+          tags$td(
+            style = paste0(
+              "width: 36px; height: 36px; background-color: ",
+              bivariate_colors[[paste(svi, htn, sep = "-")]],
+              ";"
+            ),
+            title = paste(
+              "Vulnerability:", svi,
+              "| Hypertension:", htn
+            )
+          )
+        })
+      )
+    }),
+
+    tags$tr(
+      tags$td(""),
+      tags$td(style = "text-align: center;", "Low"),
+      tags$td(style = "text-align: center;", "Moderate"),
+      tags$td(style = "text-align: center;", "High")
+    )
+  ),
+
+  tags$div(
+    style = "font-weight: bold; text-align: center;",
+    "Socioeconomic Vulnerability"
+  ),
+
+  tags$div(
+    style = "margin-top: 10px; text-align: center;",
+    tags$span(
+      style = paste0(
+        "display: inline-block; width: 12px; height: 12px;",
+        "background-color: ", bivariate_colors[["Missing"]],
+        "; margin-right: 5px;"
+      )
+    ),
+    "Missing data"
+  )
+)
+
+# tags$div() creates an HTML container.
+# tags$table() creates the legend matrix.
+# lapply() iterates through the classifications.
+# tags$tr() creates table rows.
+# tags$td() creates individual table cells.
+```
+
+## Use `leaflet` to create bivariate choropleth
+
+Add tooltip to interactive leaflet.
+
+```{r}
+#|label: interactive-bivariate-map
+
+interactive_map <- leaflet() %>%
+  addProviderTiles(providers$OpenStreetMap) %>%
+  fitBounds(
+    lng1 = -85.7,
+    lat1 = 30.3,
+    lng2 = -80.8,
+    lat2 = 35.1
+  ) %>%
+  addPolygons(
+    data = tract_leaflet,
+  fillColor = ~bivariate_pal(bivariate_class),
+  fillOpacity = 0.85,
+  stroke = FALSE,
+  label = ~paste0(
+  county_name, " | Census Tract ",
+  tract_fips, " | ", bivariate_class
+),
+  popup = ~paste0(
+  "<strong>", county_name, "</strong><br>",
+  "<strong>Census Tract:</strong> ", tract_fips, "<br><br>",
+
+  "<strong>Socioeconomic Vulnerability</strong><br>",
+  "SVI Theme 1 Percentile Rank: ",
+  ifelse(is.na(svi_theme1),
+         "Not available",
+         sprintf("%.3f", svi_theme1)), "<br>",
+  "Classification: ",
+  coalesce(svi_class, "Not available"), "<br><br>",
+
+  "<strong>Hypertension</strong><br>",
+  "Estimated Adult Diagnosed Prevalence: ",
+  ifelse(is.na(hypertension_prev),
+         "Not available",
+         paste0(hypertension_prev, "%")), "<br>",
+  "Classification: ",
+  coalesce(hypertension_class, "Not available"), "<br><br>",
+
+  "<strong>Blood Pressure Medication Use</strong><br>",
+  "Among adults with diagnosed hypertension: ",
+  ifelse(is.na(bp_medication_prev),
+         "Not available",
+         paste0(bp_medication_prev, "%")), "<br><br>",
+
+  "<strong>Bivariate Classification:</strong> ",
+  bivariate_class
+),
+  highlightOptions = highlightOptions(
+    weight = 2,
+    color = "#444444",
+    fillOpacity = 1,
+    bringToFront = FALSE
+  )
+) %>%
+  addPolygons(
+    data = county_leaflet,
+    fill = FALSE,
+    color = "white",
+    weight = 1,
+    opacity = 1,
+    options = pathOptions(interactive = FALSE)
+  ) %>%
+  addControl(
+  html = as.character(interactive_legend),
+  position = "bottomright",
+  className = "bivariate-legend"
+)
+
+# addControl() adds a custom HTML control to the Leaflet map.
+# ifelse() conditionally formats values and missing data.
+# coalesce() replaces missing classifications with descriptive text.
+# sprintf() formats the SVI percentile rank to three decimal places.
+```
+
+## Save interactive bivariate map
+
+```{r}
+#|label: save-interactive-map
+
+htmlwidgets::saveWidget(
+  widget = interactive_map,
+  file = "../assets/georgia-bivariate-interactive.html",
+  selfcontained = TRUE
+)
+```
+
+# Part 11: Prepare Barchart Visual
+
+## Import ACS health insurance data
+
+```{r}
+#|label: load-data
+
+insurance_data <- read.csv(
+  "../data/ACSST1Y2025.S2701.csv"
+)
+```
+
+## Prepare working-age insurance data
+
+```{r}
+#|label: prepare-data
+
+insurance_age <- insurance_data[5:9, ] %>%
+  transmute(
+    age_group = trimws(Label..Grouping.),
+    Insured = as.numeric(
+      gsub("%", "", Georgia..Percent.Insured..Estimate)
+    ),
+    Uninsured = as.numeric(
+      gsub("%", "", Georgia..Percent.Uninsured..Estimate)
+    )
+  ) %>%
+  pivot_longer(
+    cols = c(Insured, Uninsured),
+    names_to = "coverage_status",
+    values_to = "percentage"
+  )
+
+insurance_age
+```
+
+## Create health insurance coverage visualization
+
+```{r}
+#|label: insurance-barchart
+
+insurance_plot <- ggplot(
+  insurance_age,
+  aes(
+    x = age_group,
+    y = percentage,
+    fill = coverage_status
+  )
+) +
+  geom_col(
+    width = 0.65,
+    position = position_stack(reverse = FALSE)
+  ) +
+  geom_text(
+    aes(label = paste0(percentage, "%")),
+    position = position_stack(
+      vjust = 0.5,
+      reverse = FALSE
+    ),
+    size = 3.8,
+    color = "#282E2C"
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Insured" = "#9C89BB",
+      "Uninsured" = "#E8B4C0"
+    ),
+    breaks = c("Uninsured", "Insured")
+  ) +
+  scale_x_discrete(limits = rev) +
+  scale_y_continuous(
+    breaks = seq(0, 100, 25),
+    labels = function(x) paste0(x, "%"),
+    expand = expansion(mult = c(0, 0.03))
+  ) +
+  coord_flip() +
+  labs(
+    title = str_wrap(
+      "Health Insurance Coverage Among Working-Age Adults in Georgia",
+      width = 50
+    ),
+    subtitle = str_wrap(
+      "Percentage insured and uninsured by age group",
+      width = 55
+    ),
+    x = NULL,
+    y = "Population (%)",
+    fill = NULL,
+    caption = "Source: U.S. Census Bureau, 2025 ACS 1-Year Estimates, S2701."
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 14,
+      color = "#29443D"
+    ),
+    plot.title.position = "plot",
+    plot.subtitle = element_text(size = 11),
+    legend.position = "top",
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text = element_text(size = 11),
+    plot.caption = element_text(size = 9, hjust = 0),
+    plot.caption.position = "plot",
+    plot.margin = margin(20, 30, 20, 20),
+    plot.background = element_rect(
+      fill = "#FAF8F4",
+      color = NA
+    )
+  )
+
+insurance_plot
+```
+
+## Save Barchart
+
+```{r}
+#|label: save-barchart
+
+ggsave(
+  filename = "georgia-insurance-coverage.png",
+  path = "../assets",
+  plot = insurance_plot,
+  width = 12,
+  height = 7,
+  dpi = 300,
+  bg = "#FAF8F4"
+)
+```
+
+```{r}
+insurance_data[c(1, 13), c(
+  "Label..Grouping.",
+  "Georgia..Percent.Uninsured..Estimate"
+)]
+```
