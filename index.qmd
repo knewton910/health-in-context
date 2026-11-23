@@ -36,9 +36,9 @@ title-block: false
         </p>
       </div>
 
-      <div class="qr-container">
-        <!-- QR code will be added after publishing -->
-        <div class="qr-placeholder">QR</div>
+           <div class="qr-container">
+        <img src="assets/health-in-context-qr.png"
+             alt="QR code linking to the Health in Context data story">
         <p>Scan to explore on mobile</p>
       </div>
 
